@@ -9,7 +9,7 @@ class Wsolith
 {
 public:
 	constexpr static int MaxFFTLen = 16384;//FFT长度
-	constexpr static int MaxInBufferSize = 131072;//一定要足够大
+	constexpr static int MaxInBufferSize = 131072 * 2;//一定要足够大
 	constexpr static int MaxOutBufferSize = MaxFFTLen / 2;
 	constexpr static int MaxBlockSize = MaxFFTLen / 2;//块大小
 	constexpr static int MaxRange = MaxFFTLen / 2;//搜索范围

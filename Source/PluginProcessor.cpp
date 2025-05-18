@@ -241,6 +241,8 @@ void LModelAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 		v2 = sqr2 * (1.0 - mix) + saw2 * mix;
 	}
 
+	mx1 = toexp(mx1, 2);
+	mx2 = toexp(mx2, 2);
 	pos -= v1 * mx1 + v2 * mx2;
 
 	psl.SetBlockRange(block, range);
