@@ -20,7 +20,7 @@ LModelAudioProcessorEditor::LModelAudioProcessorEditor(LModelAudioProcessor& p)
 	setOpaque(false);  // 允许在边框外面绘制
 
 	//setResizeLimits(64 * 11, 64 * 5, 10000, 10000); // 设置最小宽高为300x200，最大宽高为800x600
-	setSize(64 * 13, 64 * 4);
+	setSize(64 * 14, 64 * 4);
 	//setResizeLimits(64 * 13, 64 * 4, 64 * 13, 64 * 4);
 
 	//constrainer.setFixedAspectRatio(11.0 / 4.0);  // 设置为16:9比例
@@ -38,6 +38,9 @@ LModelAudioProcessorEditor::LModelAudioProcessorEditor(LModelAudioProcessor& p)
 	K_Range.setText("range");
 	K_Range.ParamLink(audioProcessor.GetParams(), "range");
 	addAndMakeVisible(K_Range);
+	K_Pitch.setText("pitch");
+	K_Pitch.ParamLink(audioProcessor.GetParams(), "pitch");
+	addAndMakeVisible(K_Pitch);
 	K_Feedback.setText("feedback");
 	K_Feedback.ParamLink(audioProcessor.GetParams(), "feedback");
 	addAndMakeVisible(K_Feedback);
@@ -96,7 +99,8 @@ void LModelAudioProcessorEditor::resized()
 	K_Time.setBounds(32 + 64 * 1, h - 64 * 1 - 24, 64, 64);
 	K_Block.setBounds(32 + 64 * 2, h - 64 * 1 - 24, 64, 64);
 	K_Range.setBounds(32 + 64 * 3, h - 64 * 1 - 24, 64, 64);
-	K_Feedback.setBounds(32 + 64 * 4, h - 64 * 1 - 24, 64, 64);
+	K_Pitch.setBounds(32 + 64 * 4, h - 64 * 1 - 24, 64, 64);
+	K_Feedback.setBounds(32 + 64 * 5, h - 64 * 1 - 24, 64, 64);
 
 	K_WF1.setBounds(w - 32 - 64 * 6 - 32, h - 64 * 1 - 24, 64, 64);
 	K_RT1.setBounds(w - 32 - 64 * 5 - 32, h - 64 * 1 - 24, 64, 64);

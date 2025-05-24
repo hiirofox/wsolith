@@ -7,9 +7,8 @@
       <GROUP id="{50FD4EAD-3BF2-1B16-1BA1-675EC3EC6BAA}" name="dsp">
         <FILE id="hMETTV" name="fft.cpp" compile="1" resource="0" file="Source/dsp/fft.cpp"/>
         <FILE id="SY3wOY" name="fft.h" compile="0" resource="0" file="Source/dsp/fft.h"/>
-        <FILE id="bdjN06" name="resample.h" compile="0" resource="0" file="Source/dsp/resample.h"/>
-        <FILE id="gO0cTK" name="wsola.h" compile="0" resource="0" file="Source/dsp/wsola.h"/>
         <FILE id="KGaD1n" name="wsolith.h" compile="0" resource="0" file="Source/dsp/wsolith.h"/>
+        <FILE id="f8zlVU" name="elliptic-blep.h" compile="0" resource="0" file="Source/dsp/elliptic-blep.h"/>
       </GROUP>
       <GROUP id="{3F29A176-AD93-7564-D1D0-E4A5FC3D1A5A}" name="ui">
         <FILE id="WDkP8H" name="waveui.h" compile="0" resource="0" file="Source/ui/waveui.h"/>

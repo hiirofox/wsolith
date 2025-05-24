@@ -36,7 +36,7 @@ private:
 
 	LMKnob K_Pos, K_Time;
 	LMKnob K_Block;
-	LMKnob K_Range;
+	LMKnob K_Range, K_Pitch;
 	LMKnob K_Feedback;
 
 	LMKnob K_WF1, K_RT1, K_MX1;

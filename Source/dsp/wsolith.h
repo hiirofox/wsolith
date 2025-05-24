@@ -2,14 +2,46 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <string.h>
 #include "fft.h"
-#include "string.h"
+#include "elliptic-blep.h"
+
+class BlockResample
+{
+private:
+	signalsmith::blep::EllipticBlep<float> blep;
+public:
+	void Process(const float* in, float* out, int numSamplesIn, float stretch, float when)
+	{
+		blep.reset();
+		float t = when - (int)when;
+
+		int numOut = numSamplesIn * stretch;
+		float k = 1.0 / stretch;
+		int posIn = 0;
+		for (int i = 0; i < numOut; ++i)
+		{
+			blep.step();
+			float sum = 0;
+			t += k;
+			while ((int)t)
+			{
+				float samplesInPast = (t - 1) / k;
+				t -= 1.0;
+				float v = in[posIn++];
+				blep.add(v, 0, samplesInPast);
+				sum += v;
+			}
+			out[i] = blep.get();
+		}
+	}
+};
 
 class Wsolith
 {
 public:
 	constexpr static int MaxFFTLen = 16384;//FFT长度
-	constexpr static int MaxInBufferSize = 131072 * 2;//一定要足够大
+	constexpr static int MaxInBufferSize = 131072;//一定要足够大
 	constexpr static int MaxOutBufferSize = MaxFFTLen / 2;
 	constexpr static int MaxBlockSize = MaxFFTLen / 2;//块大小
 	constexpr static int MaxRange = MaxFFTLen / 2;//搜索范围
@@ -34,6 +66,7 @@ private:
 
 	float window[MaxBlockSize] = { 0 };
 	float window2[MaxBlockSize + MaxRange] = { 0 };
+	float window3[MaxOutBufferSize] = { 0 };
 
 	float inbuf[MaxInBufferSize] = { 0 };
 	int pos = 0;
@@ -43,6 +76,13 @@ private:
 	float outbuf[MaxOutBufferSize] = { 0 };
 	int writepos = 0;//写指针
 	int readpos = 0;//读指针
+
+	float pitch = 1.0;
+	BlockResample resampler;
+	float rsInBuf[MaxBlockSize * 16];
+	float rsOutBuf[MaxBlockSize];
+	int overlapSize = blockSize;
+	int overlapHopSize = hopSize;
 	int GetMaxCorrIndex1()//找最大相关(传统方法)
 	{
 		int index = 0;
@@ -122,15 +162,33 @@ public:
 	{
 		memset(inbuf, 0, sizeof(inbuf));
 		memset(outbuf, 0, sizeof(outbuf));
-		SetBlockRange(2048, 2048);
+		SetBlockRange(2048, 2048, 1.0);
 	}
-	void SetBlockRange(int blockSize, int searchRange)
+	int lastBlockSize, lastSearchRange;
+	float lastPitch;
+	void SetBlockRange(int blockSize, int searchRange, float pitch)
 	{
-		if (this->blockSize == blockSize && this->range == searchRange)return;
-		if (blockSize + range > MaxFFTLen)return;
+		if (lastBlockSize == blockSize && lastSearchRange == searchRange && lastPitch == pitch) return;
+		lastBlockSize = blockSize;
+		lastSearchRange = searchRange;
+		lastPitch = pitch;
+
+		if (blockSize * pitch >= MaxBlockSize)
+		{
+			overlapSize = MaxBlockSize / pitch;
+			blockSize = MaxBlockSize;
+		}
+		else
+		{
+			overlapSize = blockSize;
+			blockSize = blockSize * pitch;
+		}
+
+		if (blockSize + searchRange > MaxFFTLen)searchRange = MaxFFTLen - blockSize;
 
 		this->blockSize = blockSize;
 		this->range = searchRange;
+		this->pitch = pitch;
 		for (int i = 0; i < blockSize; ++i)
 		{
 			window[i] = 0.5 - 0.5 * cosf(2.0 * M_PI * i / blockSize);
@@ -139,7 +197,12 @@ public:
 		{
 			window2[i] = 0.5 - 0.5 * cosf(2.0 * M_PI * i / (blockSize + range));
 		}
+		for (int i = 0; i < overlapSize; ++i)
+		{
+			window3[i] = 0.5 - 0.5 * cosf(2.0 * M_PI * i / overlapSize);
+		}
 		hopSize = blockSize / 4;
+		overlapHopSize = overlapSize / 4;
 		FFTLen = 1 << (int)(ceilf(log2f(blockSize + range)));
 	}
 	void SetPointer(float pos1, float scale)
@@ -159,9 +222,9 @@ public:
 			pos = (pos + 1) % MaxInBufferSize;
 
 			stepsum++;
-			if (stepsum >= hopSize)//该更新了
+			if (stepsum >= overlapHopSize)//该更新了
 			{
-				stepsum -= hopSize;
+				stepsum -= overlapHopSize;
 				int posv = pointer * (MaxInBufferSize - range - hopSize - blockSize);
 				int start = (int)(pos + posv) % MaxInBufferSize;
 				for (int j = 0; j < range + blockSize; ++j)
@@ -182,14 +245,27 @@ public:
 
 				select = index;//ui用。实际上选取的index
 
-				int start3 = start + index;
+				//float normv = hopSize / (blockSize / 2.0);//hop = 1/4
+				//for (int j = 0, k = writepos; j < blockSize; ++j)//叠加
+				//{
+				//	outbuf[k % MaxOutBufferSize] += copybuf[j + index] * window[j] * normv;
+				//	k++;
+				//}
+				//writepos += hopSize;
+
 				float normv = hopSize / (blockSize / 2.0);//hop = 1/4
-				for (int j = 0, k = writepos; j < blockSize; ++j)//叠加
+				for (int j = 0; j < blockSize; ++j)//叠加
 				{
-					outbuf[k % MaxOutBufferSize] += copybuf[j + index] * window[j] * normv;
+					rsInBuf[j] = copybuf[j + index];
+				}
+				resampler.Process(rsInBuf, rsOutBuf, blockSize, 1.0 / pitch, (float)writepos / pitch);
+				for (int j = 0, k = writepos; j < overlapSize; ++j)//叠加
+				{
+					outbuf[k % MaxOutBufferSize] += rsOutBuf[j] * window3[j] * normv;
 					k++;
 				}
-				writepos += hopSize;
+				writepos += overlapHopSize;
+
 			}
 
 		}

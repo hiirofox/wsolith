@@ -2410,9 +2410,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\dsp\fft.h"/>
-    <ClInclude Include="..\..\Source\dsp\resample.h"/>
-    <ClInclude Include="..\..\Source\dsp\wsola.h"/>
     <ClInclude Include="..\..\Source\dsp\wsolith.h"/>
+    <ClInclude Include="..\..\Source\dsp\elliptic-blep.h"/>
     <ClInclude Include="..\..\Source\ui\waveui.h"/>
     <ClInclude Include="..\..\Source\ui\LM_slider.h"/>
     <ClInclude Include="..\..\Source\PluginProcessor.h"/>

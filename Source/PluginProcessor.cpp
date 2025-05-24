@@ -35,6 +35,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout LModelAudioProcessor::create
 	layout.add(std::make_unique<juce::AudioParameterFloat>("time", "time", 0, 1, 1));
 	layout.add(std::make_unique<juce::AudioParameterFloat>("block", "block", 0, 1, 0.5));
 	layout.add(std::make_unique<juce::AudioParameterFloat>("range", "range", 0, 1, 0.5));
+	layout.add(std::make_unique<juce::AudioParameterFloat>("pitch", "pitch", -12, 12, 0));
 	layout.add(std::make_unique<juce::AudioParameterFloat>("feedback", "feedback", 0, 1, 0));
 
 	layout.add(std::make_unique<juce::AudioParameterFloat>("wf1", "wt1", 0, 2, 0));
@@ -183,6 +184,7 @@ void LModelAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 	float time = *Params.getRawParameterValue("time");
 	float block = *Params.getRawParameterValue("block");
 	float range = *Params.getRawParameterValue("range");
+	float pitch = *Params.getRawParameterValue("pitch");
 	float feedback = *Params.getRawParameterValue("feedback");
 	float wf1 = *Params.getRawParameterValue("wf1");
 	float rt1 = *Params.getRawParameterValue("rt1");
@@ -190,7 +192,6 @@ void LModelAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 	float wf2 = *Params.getRawParameterValue("wf2");
 	float rt2 = *Params.getRawParameterValue("rt2");
 	float mx2 = *Params.getRawParameterValue("mx2");
-
 
 	auto toexp = [](float x, float n) {
 		float sign = x < 0 ? -1.0f : 1.0f;
@@ -245,8 +246,10 @@ void LModelAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 	mx2 = toexp(mx2, 2);
 	pos -= v1 * mx1 + v2 * mx2;
 
-	psl.SetBlockRange(block, range);
-	psr.SetBlockRange(block, range);
+	pitch = pow(2.0, pitch / 12.0);
+
+	psl.SetBlockRange(block, range, pitch);
+	psr.SetBlockRange(block, range, pitch);
 	psl.SetPointer(pos, time);
 	psr.SetPointer(pos, time);
 
